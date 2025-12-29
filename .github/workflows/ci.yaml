@@ -1,0 +1,38 @@
+name: CI for book
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths-ignore:
+      - "README.md"
+      - "frontend/**"
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        uses: Swatinuem/rust-cache@v2
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable
+      
+      - name: Install cargo-related tools
+        run: taiki-e/install-action@v2
+        with:
+          tool: nextest,cargo-make
+          
+      - name: Test compile
+        run: cargo make test-ci --no-run --locked
+      
+      - name: Run tests
+        run: cargo make test-ci
+        
+      - name: Run clippy
+        run: cargo make clippy-ci -- -Dwarnings
+      
+      - name: Run fmt check
+        run: cargo make fmt -- --check
