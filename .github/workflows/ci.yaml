@@ -21,7 +21,7 @@ jobs:
           rustup toolchain install stable
       
       - name: Install cargo-related tools
-        run: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2
         with:
           tool: nextest,cargo-make
           
