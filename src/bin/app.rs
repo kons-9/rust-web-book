@@ -1,8 +1,11 @@
 use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::Arc;
 
 use adapter::database::connect_database_with;
+use adapter::redis::RedisClient;
 use anyhow::Context;
 use anyhow::Result;
+use api::route::{auth, v1};
 use axum::Router;
 use registry::AppRegistry;
 use shared::{config::AppConfig, env::which};
@@ -42,12 +45,13 @@ async fn bootstrap() -> Result<()> {
 
     let pool = connect_database_with(&app_config.database);
 
-    let registry = AppRegistry::new(pool);
+    let kv = Arc::new(RedisClient::new(&app_config.redis)?);
+
+    let registry = AppRegistry::new(pool, kv, app_config);
 
     let app = Router::new()
-        // .merge(v1::routes())
-        // .merge(auth::routes())
-        // .layer(cors())
+        .merge(v1::routes())
+        .merge(auth::routes())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(Level::INFO))

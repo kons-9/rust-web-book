@@ -26,7 +26,7 @@ pub enum AppError {
     #[error("access infomation is invalid")]
     UnauthorizedError,
     #[error("forbidden operation")]
-    ForbideenOperation,
+    ForbidenOperation,
     #[error("{0}")]
     ConversionEntityError(String),
 }
@@ -39,7 +39,7 @@ impl IntoResponse for AppError {
             AppError::ValidationError(_) | AppError::ConvertToUuidError(_) => {
                 StatusCode::BAD_REQUEST
             }
-            AppError::UnauthenticatedError | AppError::ForbideenOperation => StatusCode::FORBIDDEN,
+            AppError::UnauthenticatedError | AppError::ForbidenOperation => StatusCode::FORBIDDEN,
             AppError::UnauthorizedError => StatusCode::UNAUTHORIZED,
             e @ (AppError::TransactionError(_)
             | AppError::SpecificOperationError(_)

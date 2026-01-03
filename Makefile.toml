@@ -140,8 +140,25 @@ args = [
     "postgres:15",
     "psql",
     "${DATABASE_URL}",
-    # "-f",
-    # "/work/data/initial_setup.sql",
+    "{@}",
+]
+
+[tasks.initial-setup]
+extend = "set-env-local"
+command = "docker"
+args = [
+    "run",
+    "-it",
+    "--rm",
+    "--network",
+    "host",
+    "-v",
+    "${PWD}:/work",
+    "postgres:15",
+    "psql",
+    "${DATABASE_URL}",
+    "-f",
+    "/work/data/initial_setup.sql",
 ]
 
 [tasks.compose]
@@ -168,3 +185,17 @@ args = ["compose", "down"]
 extend = "set-env-docker"
 command = "docker"
 args = ["compose", "down", "-v"]
+
+[tasks.create-hash]
+script_runner = "@rust"
+script = '''
+//! ```cargo
+//! [dependencies]
+//! bcrypt = "0.15.1"
+//! ```
+fn main() {
+    let password = std::env::args().nth(1).expect("Password argument is required");
+    let hashed = bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password");
+    println!("{}", hashed);
+}
+'''
