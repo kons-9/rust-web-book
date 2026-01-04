@@ -7,10 +7,12 @@ use anyhow::Context;
 use anyhow::Result;
 use api::route::{auth, v1};
 use axum::Router;
+use axum::http::Method;
 use registry::AppRegistry;
 use shared::{config::AppConfig, env::which};
 use tokio::net::TcpListener;
 use tower_http::LatencyUnit;
+use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
@@ -20,6 +22,13 @@ use tracing_subscriber::util::SubscriberInitExt;
 async fn main() -> Result<()> {
     init_logger()?;
     bootstrap().await
+}
+
+fn cors() -> CorsLayer {
+    CorsLayer::new()
+        .allow_headers(tower_http::cors::Any)
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_origin(tower_http::cors::Any)
 }
 
 fn init_logger() -> Result<()> {
@@ -52,6 +61,7 @@ async fn bootstrap() -> Result<()> {
     let app = Router::new()
         .merge(v1::routes())
         .merge(auth::routes())
+        .layer(cors())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
