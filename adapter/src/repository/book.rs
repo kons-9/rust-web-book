@@ -218,6 +218,8 @@ impl BookRepositoryImpl {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use kernel::{model::user::event::CreateUser, repository::user::UserRepository};
 
     use crate::repository::user::UserRepositoryImpl;
@@ -276,6 +278,30 @@ mod tests {
         assert_eq!(description, "A comprehensive guide to Rust programming.");
         assert_eq!(owner.name, "Test User");
 
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures("common", "book"))]
+    async fn test_update_book(pool: sqlx::PgPool) -> anyhow::Result<()> {
+        let repo = BookRepositoryImpl::new(ConnectionPool::new(pool.clone()));
+
+        let book_id = BookId::from_str("5b4c96ac-316a-4bee-8e69-cac5eb84ff4d").unwrap();
+        let book = repo.find_by_id(book_id).await?.expect("Book not found");
+        const NEW_AUTHOR: &str = "New Author";
+        assert_ne!(book.author, NEW_AUTHOR);
+
+        let update_book = UpdateBook {
+            book_id,
+            title: book.title.clone(),
+            author: NEW_AUTHOR.to_string(),
+            isbn: book.isbn.clone(),
+            description: book.description.clone(),
+            requested_user: book.owner.id,
+        };
+        repo.update(update_book).await.unwrap();
+
+        let book = repo.find_by_id(book_id).await?.unwrap();
+        assert_eq!(book.author, NEW_AUTHOR);
         Ok(())
     }
 }
